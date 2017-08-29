@@ -9,7 +9,7 @@
 #  Makefile for the LUFA library itself.
 # ---------------------------------------
 
-LUFA_VERSION_NUM := $(shell grep LUFA_VERSION_STRING $(LUFA_PATH)/Version.h | cut -d'"' -f2)
+LUFA_VERSION_NUM = $(shell grep LUFA_VERSION_STRING $(LUFA_PATH)/Version.h | cut -d'"' -f2)
 
 # Default target - no default action when attempting to build the core directly
 all:
@@ -17,6 +17,9 @@ all:
 # Display the LUFA version of this library copy
 version:
 	@echo "LUFA $(LUFA_VERSION_NUM)"
+
+cscope:
+	find -name '*.c' -o -name '*.h' | xargs cscope -b
 
 LUFA_PATH               := .
 ARCH                    := {AVR8,UC3,XMEGA}
