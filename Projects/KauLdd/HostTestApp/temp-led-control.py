@@ -1,18 +1,5 @@
-# """
-#              LUFA Library
-#      Copyright (C) Dean Camera, 2017.
-#
-#   dean [at] fourwalledcubicle [dot] com
-#            www.lufa-lib.org
-# """
-#
-# """
-#     LUFA Bulk Vendor device demo host test script. This script will send and
-#     receive a continuous stream of packets to/from to the device, to show
-#     bidirectional communications.
-#
-#     Requires the pyUSB library (http://sourceforge.net/projects/pyusb/).
-# """
+# Control app for the KAU LDD USB device; shows current temperature and allows
+# control of the LEDs
 
 import sys
 import struct
@@ -26,6 +13,11 @@ device_pid = 0x206C
 device_in_ep = 3
 device_out_ep = 4
 
+LEDS = [
+    1<<4,
+    1<<5,
+    1<<7,
+    1<<6]
 
 def get_vendor_device_handle():
     dev_handle = usb.core.find(idVendor=device_vid, idProduct=device_pid)
@@ -40,7 +32,7 @@ def write(device, packet):
 def read(device):
     packet = device.read(usb.util.ENDPOINT_IN | device_in_ep, 64)
     print("Received Packet: 0x{0}".format(''.join(["%x" % x for x in packet])))
-    return packet
+    return struct.unpack("bB", packet)
 
 
 def main():
