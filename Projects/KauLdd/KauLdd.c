@@ -48,22 +48,27 @@ int main(void)
 	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
 	GlobalInterruptEnable();
 
+	uint32_t ctr = 0;
+
 	for (;;)
 	{
 		USB_USBTask();
 
-		uint8_t ReceivedData[VENDOR_IO_EPSIZE];
-		memset(ReceivedData, 0x00, sizeof(ReceivedData));
+		uint8_t ReceivedData[VENDOR_IO_EPSIZE] = {0};
 
+		Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
+		if (Endpoint_IsINReady())
+		{
+			Endpoint_Write_Stream_LE(&ctr, sizeof(ctr), NULL);
+			ctr++;
+			Endpoint_ClearIN();
+		}
 		Endpoint_SelectEndpoint(VENDOR_OUT_EPADDR);
 		if (Endpoint_IsOUTReceived())
 		{
 			Endpoint_Read_Stream_LE(ReceivedData, VENDOR_IO_EPSIZE, NULL);
 			Endpoint_ClearOUT();
-
-			Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
-			Endpoint_Write_Stream_LE(ReceivedData, VENDOR_IO_EPSIZE, NULL);
-			Endpoint_ClearIN();
+			LEDs_SetAllLEDs(*(uint_reg_t*)ReceivedData);
 		}
 	}
 }
