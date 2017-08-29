@@ -57,8 +57,10 @@ int main(void)
 		Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
 		if (Endpoint_IsINReady())
 		{
-			int8_t temp = Temperature_GetTemperature();
-			Endpoint_Write_Stream_LE(&temp, sizeof(temp), NULL);
+			int8_t ret[2] = {
+				Temperature_GetTemperature(),
+				LEDs_GetLEDs()};
+			Endpoint_Write_Stream_LE(&ret, sizeof(ret), NULL);
 			Endpoint_ClearIN();
 		}
 		Endpoint_SelectEndpoint(VENDOR_OUT_EPADDR);

@@ -73,8 +73,8 @@ def main():
     if mask:
         write(vendor_device, struct.pack("B", mask))
     while True:
-        temp = read(vendor_device)
-        print("Current temperature: %d°C" % struct.unpack("b", temp))
+        data = read(vendor_device)
+        print("Current temperature: %d°C" % struct.unpack("bB", data)[0])
         time.sleep(1)
 
 
