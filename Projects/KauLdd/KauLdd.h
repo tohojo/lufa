@@ -46,6 +46,7 @@
 
 		#include <LUFA/Drivers/USB/USB.h>
 		#include <LUFA/Drivers/Board/LEDs.h>
+		#include <LUFA/Drivers/Board/Temperature.h>
 		#include <LUFA/Platform/Platform.h>
 
 	/* Macros: */

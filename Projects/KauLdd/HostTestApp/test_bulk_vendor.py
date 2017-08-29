@@ -16,6 +16,7 @@
 
 import sys
 import struct
+import time
 import usb.core
 import usb.util
 
@@ -43,18 +44,18 @@ def read(device):
 
 
 def main():
-    if len(sys.argv) < 2:
-        sys.stderr.write("Usage: %s LED_MASK\n" % sys.argv[0])
-        sys.exit(1)
+    if len(sys.argv) >= 2:
 
-    if sys.argv[1].startswith("0x"):
-        mask = int(sys.argv[1][2:], 16)
+        if sys.argv[1].startswith("0x"):
+            mask = int(sys.argv[1][2:], 16)
+        else:
+            mask = int(sys.argv[1])
+        if mask > 255 or mask < 0:
+            sys.stderr.write("LED_MASK must be > 0 and <= 255\n")
+            sys.exit(1)
     else:
-        mask = int(sys.argv[1])
+        mask = None
 
-    if mask > 255 or mask < 0:
-        sys.stderr.write("LED_MASK must be > 0 and <= 255\n")
-        sys.exit(1)
 
     vendor_device = get_vendor_device_handle()
 
@@ -69,8 +70,12 @@ def main():
            usb.util.get_string(vendor_device, vendor_device.iProduct),
            usb.util.get_string(vendor_device, vendor_device.iManufacturer)))
 
-    write(vendor_device, struct.pack("B", mask))
-    read(vendor_device)
+    if mask:
+        write(vendor_device, struct.pack("B", mask))
+    while True:
+        temp = read(vendor_device)
+        print("Current temperature: %d°C" % struct.unpack("b", temp))
+        time.sleep(1)
 
 
 if __name__ == '__main__':

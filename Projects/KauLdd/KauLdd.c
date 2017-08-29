@@ -48,8 +48,6 @@ int main(void)
 	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
 	GlobalInterruptEnable();
 
-	uint32_t ctr = 0;
-
 	for (;;)
 	{
 		USB_USBTask();
@@ -59,8 +57,8 @@ int main(void)
 		Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
 		if (Endpoint_IsINReady())
 		{
-			Endpoint_Write_Stream_LE(&ctr, sizeof(ctr), NULL);
-			ctr++;
+			int8_t temp = Temperature_GetTemperature();
+			Endpoint_Write_Stream_LE(&temp, sizeof(temp), NULL);
 			Endpoint_ClearIN();
 		}
 		Endpoint_SelectEndpoint(VENDOR_OUT_EPADDR);
@@ -97,6 +95,8 @@ void SetupHardware(void)
 
 	/* Hardware Initialization */
 	LEDs_Init();
+	ADC_Init(ADC_FREE_RUNNING | ADC_PRESCALE_128);
+	Temperature_Init();
 	USB_Init();
 }
 
