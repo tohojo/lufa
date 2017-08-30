@@ -27,9 +27,9 @@ LD_FLAGS     =
 all:
 
 flash:
-	sudo dfu-programmer at90usb1287 erase
-	sudo dfu-programmer at90usb1287 flash $(TARGET).hex
-	sudo dfu-programmer at90usb1287 launch
+	dfu-programmer at90usb1287 erase
+	dfu-programmer at90usb1287 flash $(TARGET).hex
+	dfu-programmer at90usb1287 launch
 
 # Include LUFA-specific DMBS extension modules
 DMBS_LUFA_PATH ?= $(LUFA_PATH)/Build/LUFA
