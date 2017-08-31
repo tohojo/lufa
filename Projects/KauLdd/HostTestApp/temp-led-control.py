@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Control app for the KAU LDD USB device; shows current temperature and allows
 # control of the LEDs
 
