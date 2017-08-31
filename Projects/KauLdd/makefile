@@ -26,7 +26,7 @@ LD_FLAGS     =
 # Default target
 all:
 
-flash:
+flash: all
 	dfu-programmer at90usb1287 erase
 	dfu-programmer at90usb1287 flash $(TARGET).hex
 	dfu-programmer at90usb1287 launch
