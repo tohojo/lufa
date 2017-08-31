@@ -24,7 +24,7 @@ LEDS = [
 
 LED_CHARS = ['.', 'o']
 
-INTERVAL = 0.1
+INTERVAL = 0.02
 
 
 class UsbDev(object):
@@ -79,6 +79,20 @@ class UsbDevLibUsb(UsbDev):
     def read(self):
         return self.dev_handle.read(usb.util.ENDPOINT_IN | device_in_ep, 64)
 
+class UsbDevKernel(UsbDev):
+
+    def __init__(self, loop):
+        super(UsbDevKernel, self).__init__(loop)
+        self.fp = open("/dev/kauldd0", "r+b", buffering=0)
+
+        print("Connected to /dev/kauldd0")
+
+    def write(self, packet):
+        self.fp.write(packet)
+
+    def read(self):
+        return self.fp.read(2)
+
 
 def read_char(dev):
     c = sys.stdin.read(1)
@@ -89,9 +103,14 @@ def read_char(dev):
         raise KeyboardInterrupt()
 
 
-def main(loop):
+def main(loop, mode):
 
-    dev = UsbDevLibUsb(loop)
+    if mode == 'kernel':
+        print("Using kernel mode")
+        dev = UsbDevKernel(loop)
+    else:
+        print("Using libusb mode")
+        dev = UsbDevLibUsb(loop)
 
     loop.add_reader(sys.stdin.fileno(), read_char, dev)
     loop.call_soon(dev.show_status)
@@ -110,10 +129,15 @@ def main(loop):
 if __name__ == '__main__':
     stdin_fd = sys.stdin.fileno()
     term_settings = termios.tcgetattr(stdin_fd)
+
+    if len(sys.argv) < 2 or sys.argv[1] != 'kernel':
+        mode = 'libusb'
+    else:
+        mode = 'kernel'
     try:
         tty.setcbreak(stdin_fd)
         loop = asyncio.get_event_loop()
-        main(loop)
+        main(loop, mode)
     finally:
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, term_settings)
         print("")
