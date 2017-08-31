@@ -72,7 +72,7 @@ def main(loop):
         print("No valid Vendor device found.")
         sys.exit(1)
 
-    vendor_device.set_configuration()
+    #vendor_device.set_configuration()
 
     print("Connected to device 0x%04X/0x%04X - %s [%s]" %
           (vendor_device.idVendor, vendor_device.idProduct,
