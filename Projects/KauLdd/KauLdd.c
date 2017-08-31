@@ -126,8 +126,8 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	bool ConfigSuccess = true;
 
 	/* Setup Vendor Data Endpoints */
-	ConfigSuccess &= Endpoint_ConfigureEndpoint(VENDOR_IN_EPADDR,  EP_TYPE_BULK, VENDOR_IO_EPSIZE, 1);
-	ConfigSuccess &= Endpoint_ConfigureEndpoint(VENDOR_OUT_EPADDR, EP_TYPE_BULK, VENDOR_IO_EPSIZE, 1);
+	ConfigSuccess &= Endpoint_ConfigureEndpoint(VENDOR_IN_EPADDR,  EP_TYPE_INTERRUPT, VENDOR_IO_EPSIZE, 1);
+	ConfigSuccess &= Endpoint_ConfigureEndpoint(VENDOR_OUT_EPADDR, EP_TYPE_INTERRUPT, VENDOR_IO_EPSIZE, 1);
 
 	/* Indicate endpoint configuration success or failure */
 	LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
