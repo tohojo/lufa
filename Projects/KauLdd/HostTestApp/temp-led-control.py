@@ -24,41 +24,66 @@ LEDS = [
 
 LED_CHARS = ['.', 'o']
 
-LED_STATUS = 0
+INTERVAL = 0.1
 
 
-def print_leds(mask):
-    return "LEDs: " + "".join([LED_CHARS[min(1, mask & m)] for m in LEDS])
+class UsbDev(object):
+
+    def __init__(self, loop):
+        self.led_status = 0
+        self.loop = loop
+
+    def print_leds(self):
+        return "LEDs: " + "".join([LED_CHARS[min(1, self.led_status & m)]
+                                   for m in LEDS])
+
+    def toggle_led(self, no):
+        self.led_status ^= LEDS[no]
+        self.write(struct.pack("B", self.led_status))
+
+    def write(self, packet):
+        raise NotImplementedError()
+
+    def read(self):
+        raise NotImplementedError()
+
+    def show_status(self):
+        packet = self.read()
+        temp, self.led_status = struct.unpack("bB", packet)
+        print("\rCurrent temperature: %d°C - %s" % (temp, self.print_leds()),
+              end='')
+
+        self.loop.call_later(INTERVAL, self.show_status)
 
 
-def toggle_led(no):
-    return LED_STATUS ^ LEDS[no]
+class UsbDevLibUsb(UsbDev):
 
+    def __init__(self, loop):
+        super(UsbDevLibUsb, self).__init__(loop)
+        self.dev_handle = usb.core.find(idVendor=device_vid, idProduct=device_pid)
 
-def get_vendor_device_handle():
-    dev_handle = usb.core.find(idVendor=device_vid, idProduct=device_pid)
-    return dev_handle
+        if self.dev_handle is None:
+            print("No valid Vendor device found.")
+            sys.exit(1)
 
+        print("Connected to device 0x%04X/0x%04X - %s [%s]" %
+              (self.dev_handle.idVendor, self.dev_handle.idProduct,
+               usb.util.get_string(self.dev_handle,
+                                   self.dev_handle.iProduct),
+               usb.util.get_string(self.dev_handle,
+                                   self.dev_handle.iManufacturer)))
 
-def write(device, packet):
-    device.write(usb.util.ENDPOINT_OUT | device_out_ep, packet)
+    def write(self, packet):
+        self.dev_handle.write(usb.util.ENDPOINT_OUT | device_out_ep, packet)
 
-
-def show_status(device, loop=None):
-    global LED_STATUS
-    packet = device.read(usb.util.ENDPOINT_IN | device_in_ep, 64)
-    temp, leds = struct.unpack("bB", packet)
-    LED_STATUS = leds
-    print("\rCurrent temperature: %d°C - %s" % (temp, print_leds(leds)), end='')
-
-    if loop:
-        loop.call_later(0.1, show_status, device, loop)
+    def read(self):
+        return self.dev_handle.read(usb.util.ENDPOINT_IN | device_in_ep, 64)
 
 
 def read_char(dev):
     c = sys.stdin.read(1)
     if c in '1234':
-        write(dev, struct.pack("B", toggle_led(int(c)-1)))
+        dev.toggle_led(int(c)-1)
 
     if c == 'q':
         raise KeyboardInterrupt()
@@ -66,21 +91,10 @@ def read_char(dev):
 
 def main(loop):
 
-    vendor_device = get_vendor_device_handle()
+    dev = UsbDevLibUsb(loop)
 
-    if vendor_device is None:
-        print("No valid Vendor device found.")
-        sys.exit(1)
-
-    #vendor_device.set_configuration()
-
-    print("Connected to device 0x%04X/0x%04X - %s [%s]" %
-          (vendor_device.idVendor, vendor_device.idProduct,
-           usb.util.get_string(vendor_device, vendor_device.iProduct),
-           usb.util.get_string(vendor_device, vendor_device.iManufacturer)))
-
-    loop.add_reader(sys.stdin.fileno(), read_char, vendor_device)
-    loop.call_soon(show_status, vendor_device, loop)
+    loop.add_reader(sys.stdin.fileno(), read_char, dev)
+    loop.call_soon(dev.show_status)
 
     print("Press q to exit, 1-4 to toggle LEDs", end='\n\n')
 
