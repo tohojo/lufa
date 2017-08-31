@@ -42,14 +42,14 @@
 		#include <avr/pgmspace.h>
 
 	/* Macros: */
-		/** Endpoint address of the Bulk Vendor device-to-host data IN endpoint. */
+		/** Endpoint address of the Interrupt Vendor device-to-host data IN endpoint. */
 		#define VENDOR_IN_EPADDR               (ENDPOINT_DIR_IN  | 3)
 
-		/** Endpoint address of the Bulk Vendor host-to-device data OUT endpoint. */
+		/** Endpoint address of the Interrupt Vendor host-to-device data OUT endpoint. */
 		#define VENDOR_OUT_EPADDR              (ENDPOINT_DIR_OUT | 4)
 
-		/** Size in bytes of the Bulk Vendor data endpoints. */
-		#define VENDOR_IO_EPSIZE               64
+		/** Size in bytes of the Interrupt Vendor data endpoints. */
+		#define VENDOR_IO_EPSIZE               4
 
 	/* Type Defines: */
 		/** Type define for the device configuration descriptor structure. This must be defined in the
@@ -93,4 +93,3 @@
 		                                    ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
 
 #endif
-
