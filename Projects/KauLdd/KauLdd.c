@@ -57,18 +57,39 @@ int main(void)
 		Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
 		if (Endpoint_IsINReady())
 		{
+			uint_reg_t leds = LEDs_GetLEDs();
 			int8_t ret[2] = {
-				Temperature_GetTemperature(),
-				LEDs_GetLEDs()};
+				Temperature_GetTemperature(), 0};
+
+			// Map first four bits to the logical LED numbers on the device
+			if (leds & LEDS_LED1)
+				ret[1] |= (1 << 0);
+			if (leds & LEDS_LED2)
+				ret[1] |= (1 << 1);
+			if (leds & LEDS_LED3)
+				ret[1] |= (1 << 2);
+			if (leds & LEDS_LED4)
+				ret[1] |= (1 << 3);
 			Endpoint_Write_Stream_LE(&ret, sizeof(ret), NULL);
 			Endpoint_ClearIN();
 		}
 		Endpoint_SelectEndpoint(VENDOR_OUT_EPADDR);
 		if (Endpoint_IsOUTReceived())
 		{
+			uint_reg_t leds = 0;
 			Endpoint_Read_Stream_LE(ReceivedData, VENDOR_IO_EPSIZE, NULL);
 			Endpoint_ClearOUT();
-			LEDs_SetAllLEDs(*(uint_reg_t*)ReceivedData);
+
+			// Map first four bits to the logical LED numbers on the device
+			if (ReceivedData[0] & (1 << 0))
+				leds |= LEDS_LED1;
+			if (ReceivedData[0] & (1 << 1))
+				leds |= LEDS_LED2;
+			if (ReceivedData[0] & (1 << 2))
+				leds |= LEDS_LED3;
+			if (ReceivedData[0] & (1 << 3))
+				leds |= LEDS_LED4;
+			LEDs_SetAllLEDs(leds);
 		}
 	}
 }
