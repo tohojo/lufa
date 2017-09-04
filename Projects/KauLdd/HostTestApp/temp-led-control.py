@@ -3,6 +3,7 @@
 # control of the LEDs
 
 import asyncio
+import pathlib
 import sys
 import struct
 import tty
@@ -21,6 +22,14 @@ LEDS = [
     1 << 1,
     1 << 2,
     1 << 3]
+
+LED_DEVFILES = [
+    "%s:red:1",
+    "%s:green:1",
+    "%s:red:2",
+    "%s:green:2"
+]
+
 
 LED_CHARS = ['.', 'o']
 
@@ -47,9 +56,12 @@ class UsbDev(object):
     def read(self):
         raise NotImplementedError()
 
+    def get_temp(self):
+        temp, self.led_status = struct.unpack("bB", self.read())
+        return temp
+
     def show_status(self):
-        packet = self.read()
-        temp, self.led_status = struct.unpack("bB", packet)
+        temp = self.get_temp()
         print("\rCurrent temperature: %d°C - %s" % (temp, self.print_leds()),
               end='')
 
@@ -79,6 +91,7 @@ class UsbDevLibUsb(UsbDev):
     def read(self):
         return self.dev_handle.read(usb.util.ENDPOINT_IN | device_in_ep, 64)
 
+
 class UsbDevKernel(UsbDev):
 
     def __init__(self, loop):
@@ -92,6 +105,43 @@ class UsbDevKernel(UsbDev):
 
     def read(self):
         return self.fp.read(2)
+
+
+class UsbDevClass(UsbDev):
+
+    def __init__(self, loop):
+        super(UsbDevClass, self).__init__(loop)
+
+        base = pathlib.Path("/sys/class/hwmon")
+        for p in base.iterdir():
+            namefile = p / "name"
+            if namefile.exists():
+                name = namefile.read_text().strip()
+                if name.startswith("kauldd"):
+                    self.name = name
+                    self.hwmon = p / "temp1_input"
+                    break
+
+        else:
+            raise RuntimeError("Couldn't find a usable hwmon device")
+
+        ledbase = pathlib.Path("/sys/class/leds")
+        self.leds = []
+        for l in LED_DEVFILES:
+            self.leds.append(ledbase / (l % self.name) / "brightness")
+
+        print("Connected to %s" % self.name)
+
+    def get_temp(self):
+        return int(self.hwmon.read_text()) / 1000
+
+    def print_leds(self):
+        return "LEDs: " + "".join([LED_CHARS[min(1, int(m.read_text()))]
+                                   for m in self.leds])
+
+    def toggle_led(self, no):
+        state = int(self.leds[no].read_text())
+        self.leds[no].write_text(str(1 if not state else 0))
 
 
 def read_char(dev):
@@ -108,6 +158,9 @@ def main(loop, mode):
     if mode == 'kernel':
         print("Using kernel mode")
         dev = UsbDevKernel(loop)
+    elif mode == 'class':
+        print("Using class mode")
+        dev = UsbDevClass(loop)
     else:
         print("Using libusb mode")
         dev = UsbDevLibUsb(loop)
@@ -130,10 +183,10 @@ if __name__ == '__main__':
     stdin_fd = sys.stdin.fileno()
     term_settings = termios.tcgetattr(stdin_fd)
 
-    if len(sys.argv) < 2 or sys.argv[1] != 'kernel':
-        mode = 'libusb'
+    if len(sys.argv) > 1:
+        mode = sys.argv[1]
     else:
-        mode = 'kernel'
+        mode = 'libusb'
     try:
         tty.setcbreak(stdin_fd)
         loop = asyncio.get_event_loop()
